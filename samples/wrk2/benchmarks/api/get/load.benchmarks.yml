@@ -1,0 +1,35 @@
+imports:
+  - https://raw.githubusercontent.com/zhenlei520/crank/sample/src/Microsoft.Crank.Jobs.Wrk2/wrk2.yml
+  - https://raw.githubusercontent.com/zhenlei520/crank/sample/samples/wrk2/common/project.profiles.yml
+
+jobs:
+  server:
+    source:
+      repository: https://github.com/zhenlei520/crank
+      branchOrCommit: sample
+      project: samples/hello/hello.csproj
+    readyStateText: Application started.
+
+scenarios:
+  api:
+    application: # 实际压测项目时可移除此节点，此处是为模拟应用服务启动
+      job: server
+      variables:
+        duration: 1
+    load:
+      job: wrk2
+      variables:
+        serverPath: /user/get
+        script: request.lua
+        duration: 1
+
+profiles:
+  defaultParamLocal: # 本地环境的参数信息
+    variables: 
+      connections: 1
+      threads: 1
+      requests: 1
+      duration: 1
+      rate: 1
+      serverQueryString: ?id={1}
+      serverQueryParameter: 1||2 # 随机请求/get?id=1、/get?id=2

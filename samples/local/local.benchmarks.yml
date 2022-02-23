@@ -1,10 +1,10 @@
 imports:
-  - https://raw.githubusercontent.com/dotnet/crank/main/src/Microsoft.Crank.Jobs.Bombardier/bombardier.yml
+  - https://raw.githubusercontent.com/zhenlei520/crank/sample/src/Microsoft.Crank.Jobs.Bombardier/bombardier.yml
 
 jobs:
   server:
     source:
-      localFolder: ../../samples/hello
+      localFolder: ../hello
       project: hello.csproj
     readyStateText: Application started.
 

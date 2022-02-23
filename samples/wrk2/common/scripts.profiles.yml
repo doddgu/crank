@@ -1,0 +1,13 @@
+scripts: 
+  changeTarget: |
+    benchmarks.jobs.load.results["cpu"] = benchmarks.jobs.load.results["benchmarks/cpu"]
+    benchmarks.jobs.load.results["cpuRaw"] = benchmarks.jobs.load.results["benchmarks/cpu/raw"]
+    benchmarks.jobs.load.results["workingSet"] = benchmarks.jobs.load.results["benchmarks/working-set"]
+    benchmarks.jobs.load.results["privateMemory"] = benchmarks.jobs.load.results["benchmarks/private-memory"]
+    benchmarks.jobs.load.results["totalRequests"] = benchmarks.jobs.load.results["bombardier/requests;http/requests"]
+    benchmarks.jobs.load.results["badResponses"] = benchmarks.jobs.load.results["bombardier/badresponses;http/requests/badresponses"]
+    benchmarks.jobs.load.results["requestSec"] = benchmarks.jobs.load.results["bombardier/rps/mean;http/rps/mean"]
+    benchmarks.jobs.load.results["requestSecMax"] = benchmarks.jobs.load.results["bombardier/rps/max;http/rps/max"]
+    benchmarks.jobs.load.results["latencyMean"] = benchmarks.jobs.load.results["bombardier/latency/mean;http/latency/mean"]
+    benchmarks.jobs.load.results["latencyMax"] = benchmarks.jobs.load.results["bombardier/latency/max;http/latency/max"]
+    benchmarks.jobs.load.results["bombardierRaw"] = benchmarks.jobs.load.results["bombardier/raw"]

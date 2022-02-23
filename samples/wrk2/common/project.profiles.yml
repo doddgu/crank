@@ -1,0 +1,15 @@
+imports:
+  - https://raw.githubusercontent.com/zhenlei520/crank/sample/samples/wrk2/common/load.profiles.yml
+
+profiles:
+  local:
+    variables:
+      serverAddress: localhost # 可不写，wrk2默认：localhost
+      serverPort: 5000 # 可不写，wrk2默认端口：5000
+      # connections: 1
+      # threads: 1
+      # requests: 1
+      # duration: 1
+      # rate: 1
+      warmup: 0
+      scriptArchive: https://gitee.com/zhenlei520/crank/raw/sample/src/Microsoft.Crank.Jobs.Wrk2/scripts.tar # script 压缩包路径，仅支持远程地址

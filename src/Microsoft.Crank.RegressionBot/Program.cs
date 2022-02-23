@@ -28,11 +28,14 @@ namespace Microsoft.Crank.RegressionBot
 {
     class Program
     {
+        static ProductHeaderValue ClientHeader = new ProductHeaderValue("CrankBot");
 
+        private static GitHubClient _githubClient;
         private static readonly HttpClient _httpClient;
         private static readonly HttpClientHandler _httpClientHandler;
 
         static BotOptions _options;
+        static Credentials _credentials;
         static IReadOnlyList<Issue> _recentIssues;
 
         static TemplateOptions _templateOptions = new TemplateOptions();
@@ -185,11 +188,11 @@ namespace Microsoft.Crank.RegressionBot
             {
                 if (!String.IsNullOrEmpty(options.AccessToken))
                 {
-                    GitHubHelper.GetCredentialsForUser(options);
+                    _credentials = CredentialsHelper.GetCredentialsForUser(options);
                 }
                 else
                 {
-                    await GitHubHelper.GetCredentialsForAppAsync(options);
+                    _credentials = await CredentialsHelper.GetCredentialsForAppAsync(options);
                 }
             }
 
@@ -370,7 +373,7 @@ namespace Microsoft.Crank.RegressionBot
 
                 if (!_options.ReadOnly) 
                 {
-                    await GitHubHelper.GetClient().Issue.Create(_options.RepositoryId, createIssue);
+                    await GetClient().Issue.Create(_options.RepositoryId, createIssue);
                 }
             }
 
@@ -781,25 +784,30 @@ namespace Microsoft.Crank.RegressionBot
 
                                 var hasRecovered = false;
 
-                                // It has recovered if the difference between the first measurement and the current one 
-                                // are within the threashold boundaries, or if the value is better (opposite sign).
-
                                 switch (probe.Unit)
                                 {
                                     case ThresholdUnits.StDev:
                                         // factor of standard deviation
-                                        hasRecovered = Math.Abs(nextValue) < probe.Threshold * standardDeviation || Math.Sign(nextValue) != Math.Sign(value4);
+                                        hasRecovered = Math.Sign(nextValue) == Math.Sign(value4)
+                                            ? Math.Abs(nextValue) < probe.Threshold * standardDeviation
+                                            : Math.Abs(nextValue) >= probe.Threshold * standardDeviation
+                                            ;
 
                                         break;
                                     case ThresholdUnits.Percent:
                                         // percentage of the average of values
-                                        hasRecovered = Math.Abs(nextValue) < average * (probe.Threshold / 100) || Math.Sign(nextValue) != Math.Sign(value4);
-                                        ;
+                                        hasRecovered = Math.Sign(nextValue) == Math.Sign(value4)
+                                            ? Math.Abs(nextValue) < average * (probe.Threshold / 100)
+                                            : Math.Abs(nextValue) >= average * (probe.Threshold / 100)
+                                            ;
 
                                         break;                            
                                     case ThresholdUnits.Absolute:
                                         // absolute deviation
-                                        hasRecovered = Math.Abs(nextValue) < probe.Threshold || Math.Sign(nextValue) != Math.Sign(value4);
+                                        hasRecovered = Math.Sign(nextValue) == Math.Sign(value4)
+                                            ? Math.Abs(nextValue) < probe.Threshold
+                                            : Math.Abs(nextValue) >= probe.Threshold
+                                            ;
 
                                         break;
                                     default:
@@ -850,7 +858,7 @@ namespace Microsoft.Crank.RegressionBot
                 Since = DateTimeOffset.Now.AddDays(0 - source.DaysToLoad)
             };
 
-            var issues = await GitHubHelper.GetClient().Issue.GetAllForRepository(_options.RepositoryId, recently);
+            var issues = await GetClient().Issue.GetAllForRepository(_options.RepositoryId, recently);
 
             return _recentIssues = issues;
         }
@@ -944,7 +952,7 @@ namespace Microsoft.Crank.RegressionBot
 
                     if (!_options.ReadOnly)
                     {
-                        await GitHubHelper.GetClient().Issue.Update(_options.RepositoryId, issue.Number, update);
+                        await GetClient().Issue.Update(_options.RepositoryId, issue.Number, update);
                     }
                 }
                 else
@@ -954,6 +962,17 @@ namespace Microsoft.Crank.RegressionBot
             }
 
             return regressionsToReport.Values;
+        }
+
+        private static GitHubClient GetClient()
+        {
+            if (_githubClient == null)
+            {
+                _githubClient = new GitHubClient(ClientHeader);
+                _githubClient.Credentials = _credentials;
+            }
+
+            return _githubClient;
         }
 
         private static string AddOwners(string body, IEnumerable<Regression> regressions)

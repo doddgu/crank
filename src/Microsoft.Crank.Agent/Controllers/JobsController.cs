@@ -144,7 +144,7 @@ namespace Microsoft.Crank.Agent.Controllers
         {
             try
             {
-                Log.Info($"Driver deleting job '{id}'");
+                Log($"Driver deleting job '{id}'");
                 var job = _jobs.Find(id);
 
                 if (job == null)
@@ -160,7 +160,7 @@ namespace Microsoft.Crank.Agent.Controllers
             }
             catch (Exception e)
             {
-                Log.Error(e, $"Error while deleting job '{id}' ");
+                Log($"Error while deleting job '{id}' " + e.Message);
                 return NotFound();
             }
         }
@@ -168,7 +168,7 @@ namespace Microsoft.Crank.Agent.Controllers
         [HttpPost("{id}/stop")]
         public IActionResult Stop(int id)
         {
-            Log.Info($"Driver stopping job '{id}'");
+            Log($"Driver stopping job '{id}'");
 
             try
             {
@@ -196,7 +196,7 @@ namespace Microsoft.Crank.Agent.Controllers
             }
             catch (Exception e)
             {
-                Log.Error($"Error while stopping job '{id}' " + e.Message);
+                Log($"Error while stopping job '{id}' " + e.Message);
                 return NotFound();
             }
         }
@@ -240,7 +240,7 @@ namespace Microsoft.Crank.Agent.Controllers
                     count++;
                 } while (!measurement.IsDelimiter);
 
-                Log.Info($"Flushed {count} measurements");
+                Log($"Flushed {count} measurements");
 
                 _jobs.Update(job);
                 return Ok();
@@ -282,7 +282,7 @@ namespace Microsoft.Crank.Agent.Controllers
             
             if (job.State != JobState.Initializing)
             {
-                Log.Info($"Start rejected, job is {job.State}");
+                Log($"Start rejected, job is {job.State}");
                 return StatusCode(500, $"The job can't be started as its state is {job.State}");
             }
 
@@ -302,7 +302,7 @@ namespace Microsoft.Crank.Agent.Controllers
             
             var destinationFilename = Request.Headers["destinationFilename"].ToString();
 
-            Log.Info($"Uploading attachment: {destinationFilename}");
+            Log($"Uploading attachment: {destinationFilename}");
 
             var job = _jobs.Find(id);
 
@@ -313,13 +313,16 @@ namespace Microsoft.Crank.Agent.Controllers
 
             if (job.State != JobState.Initializing)
             {
-                Log.Info($"Attachment rejected, job is {job.State}");
+                Log($"Attachment rejected, job is {job.State}");
                 return StatusCode(500, $"The job can't accept attachment as its state is {job.State}");
             }
 
             var tempFilename = Path.GetTempFileName();
 
-            await SaveBodyAsync(tempFilename);
+            using (var fs = System.IO.File.Create(tempFilename))
+            {
+                await Request.Body.CopyToAsync(fs, Request.HttpContext.RequestAborted);
+            }
 
             job.Attachments.Add(new Attachment
             {
@@ -339,12 +342,15 @@ namespace Microsoft.Crank.Agent.Controllers
         {
             var destinationFilename = Request.Headers["destinationFilename"].ToString();
 
-            Log.Info($"Uploading source code");
+            Log($"Uploading source code");
 
             var job = _jobs.Find(id);
             var tempFilename = Path.GetTempFileName();
 
-            await SaveBodyAsync(tempFilename);
+            using (var fs = System.IO.File.Create(tempFilename))
+            {
+                await Request.Body.CopyToAsync(fs, Request.HttpContext.RequestAborted);
+            }
 
             job.Source.SourceCode = new Attachment
             {
@@ -364,12 +370,15 @@ namespace Microsoft.Crank.Agent.Controllers
         {
             var destinationFilename = Request.Headers["destinationFilename"].ToString();
 
-            Log.Info($"Uploading build file {destinationFilename}");
+            Log($"Uploading build files");
 
             var job = _jobs.Find(id);
             var tempFilename = Path.GetTempFileName();
 
-            await SaveBodyAsync(tempFilename);
+            using (var fs = System.IO.File.Create(tempFilename))
+            {
+                await Request.Body.CopyToAsync(fs, Request.HttpContext.RequestAborted);
+            }
 
             job.BuildAttachments.Add(new Attachment
             {
@@ -382,35 +391,19 @@ namespace Microsoft.Crank.Agent.Controllers
             return Ok();
         }
 
-        private async Task SaveBodyAsync(string filename)
-        {
-            using var outputFileStream = System.IO.File.Create(filename);
-
-            if (Request.Headers.TryGetValue("Content-Encoding", out var encoding) && encoding.Contains("gzip"))
-            {
-                Log.Info($"Received gzipped file content");
-                using var decompressor = new GZipStream(Request.Body, CompressionMode.Decompress);
-                await decompressor.CopyToAsync(outputFileStream, Request.HttpContext.RequestAborted);
-            }
-            else
-            {
-                await Request.Body.CopyToAsync(outputFileStream, Request.HttpContext.RequestAborted);
-            }
-        }
-
         [HttpGet("{id}/trace")]
         public IActionResult Trace(int id)
         {
-            Log.Info($"Downloading trace for job {id}");
+            Log($"Downloading trace for job {id}");
 
             try
             {
                 var job = _jobs.Find(id);
-                Log.Info($"Sending {job.PerfViewTraceFile}");
+                Log($"Sending {job.PerfViewTraceFile}");
                 
                 if (!System.IO.File.Exists(job.PerfViewTraceFile))
                 {
-                    Log.Info("Trace file doesn't exist");
+                    Log("Trace file doesn't exist");
                     return NotFound();
                 }
 
@@ -418,7 +411,7 @@ namespace Microsoft.Crank.Agent.Controllers
             }
             catch(Exception e)
             {
-                Log.Error(e);
+                Log("Error: " + e);
                 return NotFound();
             }
         }
@@ -426,16 +419,16 @@ namespace Microsoft.Crank.Agent.Controllers
         [HttpGet("{id}/dump")]
         public IActionResult Dump(int id)
         {
-            Log.Info($"Downloading dump for job {id}");
+            Log($"Downloading dump for job {id}");
 
             try
             {
                 var job = _jobs.Find(id);
-                Log.Info($"Sending {job.DumpFile}");
+                Log($"Sending {job.DumpFile}");
 
                 if (!System.IO.File.Exists(job.DumpFile))
                 {
-                    Log.Info("Dump file doesn't exist");
+                    Log("Dump file doesn't exist");
                     return NotFound();
                 }
 
@@ -443,7 +436,7 @@ namespace Microsoft.Crank.Agent.Controllers
             }
             catch (Exception e)
             {
-                Log.Error(e);
+                Log("Error: " + e);
                 return NotFound();
             }
         }
@@ -533,7 +526,7 @@ namespace Microsoft.Crank.Agent.Controllers
             {
                 var job = _jobs.Find(id);
 
-                Log.Info($"Driver fetching published application '{id}'");
+                Log($"Driver fetching published application '{id}'");
 
                 if (String.IsNullOrEmpty(job.Source.DockerFile))
                 {
@@ -592,7 +585,7 @@ namespace Microsoft.Crank.Agent.Controllers
 
                 var fullPath = Path.Combine(job.BasePath, path);
 
-                Log.Info($"Download requested: '{fullPath}'");
+                Log($"Download requested: '{fullPath}'");
 
                 if (String.IsNullOrEmpty(job.Source.DockerFile))
                 {
@@ -601,7 +594,7 @@ namespace Microsoft.Crank.Agent.Controllers
                         return NotFound();
                     }
 
-                    Log.Info($"Uploading {path} ({new FileInfo(fullPath).Length / 1024 + 1} KB)");
+                    Log($"Uploading {path} ({new FileInfo(fullPath).Length / 1024 + 1} KB)");
 
                     return new GZipFileResult(fullPath);
                 }
@@ -760,6 +753,12 @@ namespace Microsoft.Crank.Agent.Controllers
                 ;
         }
 
+        private static void Log(string message)
+        {
+            var time = DateTime.Now.ToString("hh:mm:ss.fff");
+            Console.WriteLine($"[{time}] {message}");
+        }
+
         private class TempFolder : IDisposable
         {
             private readonly string _folder;
@@ -776,7 +775,7 @@ namespace Microsoft.Crank.Agent.Controllers
                 }
                 catch
                 {
-                    Log.Error("Could not delete temporary folder: " + _folder);
+                    Log("Could not delete temporary folder: " + _folder);
                 }
             }
         }

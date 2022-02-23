@@ -11,17 +11,16 @@ using Octokit;
 
 namespace Microsoft.Crank.RegressionBot
 {
-    public class GitHubHelper
+    public class CredentialsHelper
     {
-        private static GitHubClient _githubClient;
-        static ProductHeaderValue ClientHeader = new ProductHeaderValue("crank-regression-bot");
-        static Credentials _credentials;
-
         static readonly TimeSpan GitHubJwtTimeout = TimeSpan.FromMinutes(5);
+
+        // Used as the GitHub client agent
+        private const string AppName = "crank-bot";
 
         public static Credentials GetCredentialsForUser(BotOptions options)
         {
-            return _credentials = new Credentials(options.AccessToken);
+            return new Credentials(options.AccessToken);
         }
 
         private static RsaSecurityKey GetRsaSecurityKeyFromPemKey(string keyText)
@@ -50,24 +49,13 @@ namespace Microsoft.Crank.RegressionBot
                     notBefore: null));
 
             var jwtTokenString = new JwtSecurityTokenHandler().WriteToken(jwtToken);
-            var initClient = new GitHubClient(ClientHeader)
+            var initClient = new GitHubClient(new ProductHeaderValue(AppName))
             {
                 Credentials = new Credentials(jwtTokenString, AuthenticationType.Bearer),
             };
 
             var installationToken = await initClient.GitHubApps.CreateInstallationToken(options.InstallId);
-            return _credentials = new Credentials(installationToken.Token, AuthenticationType.Bearer);
-        }
-
-        public static GitHubClient GetClient()
-        {
-            if (_githubClient == null)
-            {
-                _githubClient = new GitHubClient(ClientHeader);
-                _githubClient.Credentials = _credentials;
-            }
-
-            return _githubClient;
+            return new Credentials(installationToken.Token, AuthenticationType.Bearer);
         }
     }
 }

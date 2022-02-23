@@ -1,0 +1,36 @@
+# 存储全部可用的Agent节点信息
+
+profiles:
+  crankAgent1:
+    jobs:
+      application: # 实际项目中可删除application，当前只是希望模拟应用服务启动
+        endpoints: 
+          - http://localhost:5010
+      load:
+        endpoints:
+          - http://localhost:5010
+  crankAgent2:
+    jobs:
+      load:
+        endpoints:
+          - http://localhost:5011
+  crankAgent3:
+    jobs:
+      load:
+        endpoints:
+          - http://localhost:5012
+  crankAgent4:
+    jobs:
+      load:
+        endpoints:
+          - http://localhost:5013
+  crankAgent5:
+    jobs:
+      load:
+        endpoints:
+          - http://localhost:5014
+  crankAgent6:
+    jobs:
+      load:
+        endpoints:
+          - http://localhost:5015

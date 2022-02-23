@@ -17,7 +17,6 @@ using Microsoft.Crank.Controller.Ignore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Threading;
-using System.Net.Http.Headers;
 
 namespace Microsoft.Crank.Controller
 {
@@ -960,20 +959,13 @@ namespace Microsoft.Crank.Controller
 
                 using (var request = new HttpRequestMessage(HttpMethod.Post, uri))
                 {
-                    using var fileStream = 
-                        uploadFilename.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-                        ? await _httpClient.GetStreamAsync(uploadFilename)
-                        : new FileStream(uploadFilename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 1, FileOptions.Asynchronous | FileOptions.SequentialScan)
-                        ;
+                    var fileContent = uploadFilename.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                        ? new StreamContent(await _httpClient.GetStreamAsync(uploadFilename))
+                        : new StreamContent(new FileStream(uploadFilename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 1, FileOptions.Asynchronous | FileOptions.SequentialScan));
 
-                    using (var fileContent = new StreamContent(fileStream))
+                    using (fileContent)
                     {
                         request.Content = fileContent;
-                        if (Job.ServerVersion >= 5)
-                        {
-                            request.Content = new CompressedContent(request.Content);
-                        }
-
                         request.Headers.Add("id", Job.Id.ToString());
                         request.Headers.Add("destinationFilename", destinationFilename);
 
@@ -987,37 +979,6 @@ namespace Microsoft.Crank.Controller
             }
 
             return 0;
-        }
-
-        public class CompressedContent : HttpContent
-        {
-            private HttpContent _content;
-
-            public CompressedContent(HttpContent content)
-            {
-                _content = content;
-
-                // copy the headers from the original content
-                foreach (KeyValuePair<string, IEnumerable<string>> header in _content.Headers)
-                {
-                    Headers.TryAddWithoutValidation(header.Key, header.Value);
-                }
-
-                Headers.ContentEncoding.Add("gzip");
-            }
-
-            protected override bool TryComputeLength(out long length)
-            {
-                length = -1;
-
-                return false;
-            }
-
-            protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
-            {
-                using var compressedStream = new GZipStream(stream, CompressionMode.Compress, leaveOpen: true);
-                await _content.CopyToAsync(compressedStream);
-            }
         }
 
         private async Task<string> DownloadTemporaryFileAsync(string uri)
@@ -1052,38 +1013,11 @@ namespace Microsoft.Crank.Controller
             }
         }
 
-        public async Task DownloadBuildLogAsync()
+        public async Task<string> DownloadBuildLog()
         {
-            if (!Job.Options.DownloadBuildLog)
-            {
-                return;
-            }
+            var uri = Combine(_serverJobUri, "/buildlog");
 
-            const string logExtension = ".log";
-            var downloadDestination = Job.Options.DownloadBuildLogOutput;
-
-            if (String.IsNullOrWhiteSpace(downloadDestination))
-            {
-                downloadDestination = Job.Service;
-            }
-
-            if (!downloadDestination.EndsWith(logExtension, StringComparison.OrdinalIgnoreCase))
-            {
-                downloadDestination = downloadDestination + "." + DateTime.Now.ToString("MM-dd-HH-mm-ss") + logExtension;
-            }
-
-            Log.Write($"Downloading build log from {_serverUri.Host} to '{downloadDestination}'");
-
-            try
-            {
-                StartKeepAlive();
-                var uri = Combine(_serverJobUri, "/buildlog");
-                await _httpClient.DownloadFileAsync(uri, _serverJobUri, downloadDestination);
-            }
-            finally
-            {
-                StopKeepAlive();
-            }
+            return await _httpClient.GetStringAsync(uri);
         }
 
         public async Task<string> StreamOutputAsync()
@@ -1126,38 +1060,11 @@ namespace Microsoft.Crank.Controller
             }
         }
 
-        public async Task DownloadOutputAsync()
+        public async Task<string> DownloadOutput()
         {
-            if (!Job.Options.DownloadOutput)
-            {
-                return;
-            }
+            var uri = Combine(_serverJobUri, "/output");
 
-            const string logExtension = ".log";
-            var downloadDestination = Job.Options.DownloadOutputOutput;
-
-            if (String.IsNullOrWhiteSpace(downloadDestination))
-            {
-                downloadDestination = Job.Service;
-            }
-
-            if (!downloadDestination.EndsWith(logExtension, StringComparison.OrdinalIgnoreCase))
-            {
-                downloadDestination = downloadDestination + "." + DateTime.Now.ToString("MM-dd-HH-mm-ss") + logExtension;
-            }
-
-            Log.Write($"Downloading job output from {_serverUri.Host} to '{downloadDestination}'");
-
-            try
-            {
-                StartKeepAlive();
-                var uri = Combine(_serverJobUri, "/output");
-                await _httpClient.DownloadFileAsync(uri, _serverJobUri, downloadDestination);
-            }
-            finally
-            {
-                StopKeepAlive();
-            }
+            return await _httpClient.GetStringAsync(uri);
         }
 
         public async Task DownloadFileAsync(string file, string output)

@@ -1,0 +1,62 @@
+# Examples:
+# --config benchmarks.crudapi.yml --scenario ApiCrudListProducts --profile aspnet-perf-lin
+# 此处源码来自https://github.com/aspnet/Benchmarks/blob/main/src/BenchmarksApps/Mvc/benchmarks.crudapi.yml
+
+imports:
+- https://raw.githubusercontent.com/dotnet/crank/main/src/Microsoft.Crank.Jobs.Bombardier/bombardier.yml
+- https://raw.githubusercontent.com/aspnet/Benchmarks/main/src/BenchmarksApps/Mvc/mvcserver.yml
+- https://github.com/aspnet/Benchmarks/blob/main/scenarios/aspnet.profiles.yml?raw=true
+
+variables:
+    serverPort: 5000
+
+scenarios:
+    # List products
+  ApiCrudListProducts:
+    application:
+      job: mvcServer
+    load:
+      job: bombardier
+      variables:
+        path: /Products?pageNumber=1&pageSize=10
+
+    # Get an individual product
+  ApiCrudGetProductDetails:
+    application:
+      job: mvcServer
+    load:
+      job: bombardier
+      variables:
+        path: /Products/1
+
+    # Add product
+  ApiCrudAddProduct:
+    application:
+      job: mvcServer
+    load:
+      job: bombardier
+      variables:
+        path: /Products
+        verb: POST
+        bodyFile: https://raw.githubusercontent.com/aspnet/Benchmarks/main/src/BenchmarksApps/Mvc/crudproductbody.json
+
+    # Update product
+  ApiCrudUpdateProduct:
+    application:
+      job: mvcServer
+    load:
+      job: bombardier
+      variables:
+        path: /Products/1
+        verb: PUT
+        bodyFile: https://raw.githubusercontent.com/aspnet/Benchmarks/main/src/BenchmarksApps/Mvc/crudproductbody.json
+
+    # Remove a product item
+  ApiCrudDeleteProduct:
+    application:
+      job: mvcServer
+    load:
+      job: bombardier
+      variables:
+        path: /Products/1
+        verb: DELETE
