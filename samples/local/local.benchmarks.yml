@@ -1,5 +1,5 @@
 imports:
-  - https://raw.githubusercontent.com/zhenlei520/crank/sample/src/Microsoft.Crank.Jobs.Bombardier/bombardier.yml
+  - https://raw.githubusercontent.com/doddgu/crank/sample/src/Microsoft.Crank.Jobs.Bombardier/bombardier.yml
 
 jobs:
   server:

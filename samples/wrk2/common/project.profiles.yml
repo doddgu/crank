@@ -1,5 +1,5 @@
 imports:
-  - https://raw.githubusercontent.com/zhenlei520/crank/sample/samples/wrk2/common/load.profiles.yml
+  - https://raw.githubusercontent.com/doddgu/crank/sample/samples/wrk2/common/load.profiles.yml
 
 profiles:
   local:
@@ -12,4 +12,4 @@ profiles:
       # duration: 1
       # rate: 1
       warmup: 0
-      scriptArchive: https://gitee.com/zhenlei520/crank/raw/sample/src/Microsoft.Crank.Jobs.Wrk2/scripts.tar # script 压缩包路径，仅支持远程地址
+      scriptArchive: https://gitee.com/doddgu/crank/raw/sample/src/Microsoft.Crank.Jobs.Wrk2/scripts.tar # script 压缩包路径，仅支持远程地址

@@ -13,7 +13,7 @@ variables:
 jobs:
   wrk2:
     source:
-      repository: https://github.com/zhenlei520/crank.git
+      repository: https://github.com/doddgu/crank.git
       branchOrCommit: sample
       project: src/Microsoft.Crank.Jobs.Wrk2/Microsoft.Crank.Jobs.Wrk2.csproj
     isConsoleApp: true

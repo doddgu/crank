@@ -23,7 +23,7 @@ namespace Microsoft.Crank.Jobs.Wrk2
     {
         const string Wrk2Url = "https://aspnetbenchmarks.blob.core.windows.net/tools/wrk2";
 
-        const string DefaultWrk2ScriptUrl = "https://gitee.com/zhenlei520/crank/raw/sample/src/Microsoft.Crank.Jobs.Wrk2/scripts.tar";
+        const string DefaultWrk2ScriptUrl = "https://gitee.com/doddgu/crank/raw/sample/src/Microsoft.Crank.Jobs.Wrk2/scripts.tar";
 
         static async Task<int> Main(string[] args)
         {
